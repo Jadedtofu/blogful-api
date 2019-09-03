@@ -7,6 +7,8 @@ const { NODE_ENV } = require('./config');
 const ArticlesService = require('./articles-service');
 
 const app = express();
+const jsonParser = express.json();
+// to read body with JSON parser instead of insert to db table
 
 // const morganOption = (process.env.NODE_ENV === 'production')
 const morganOption = (NODE_ENV === 'production')
@@ -62,6 +64,27 @@ app.get('/articles/:article_id', (req, res, next) => {
             });
         })
         .catch(next);
+});
+
+app.post('/articles', jsonParser, (req, res, next) => {
+    // res.status(201).json({
+    //     ...req.body,
+    //     id: 12,
+    // });
+        // creating article here:
+    const { title, content, style } = req.body
+    const newArticle = { title, content, style }
+    ArticlesService.insertArticle(
+        req.app.get('db'),
+        newArticle
+    )
+    .then(article => {
+        res
+            .status(201)
+            .location(`/articles/${article.id}`)  // make location header assertion pass, we need this method ^
+            .json(article)
+    })
+    .catch(next);
 });
 
 app.use(function errorHandler(error, req, res, next) {
