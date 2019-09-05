@@ -4,7 +4,7 @@ const knex = require('knex');
 const app = require('../src/app');
 const { makeArticlesArray } = require('./articles.fixtures');
 
-describe.only('Articles Endpoints', function() {
+describe('Articles Endpoints', function() {
     let db;
 
     before('make knex instance', () => {
@@ -127,6 +127,63 @@ describe.only('Articles Endpoints', function() {
                     supertest(app)
                         .get(`/articles/${postRes.body.id}`)
                         .expect(postRes.body));
+        });
+
+        // it(`responds with 400 and an error message when 'title' is missing`, () => {
+        //     return supertest(app)
+        //         .post('/articles')
+        //         .send({
+        //             style: 'Listicle',
+        //             content: 'Test new article content...'
+        //         })
+        //         .expect(400, {
+        //             error: { message: `Missing 'title' in request body`}
+        //         });
+        // });
+
+        // it(`responds with 400 and an error message when 'content' is missing`, () => {
+        //     return supertest(app)
+        //         .post('/articles')
+        //         .send({
+        //             title: 'Test new article',
+        //             style: 'Listicle',
+        //         })
+        //         .expect(400, {
+        //             error: { message: `Missing 'content' in request body` }
+        //         });
+        // });
+
+        // it(`responds with 400 and an error message when 'style' is missing`, () => {
+        //     return supertest(app)
+        //         .post('/articles')
+        //         .send({
+        //             title: 'Test new article',
+        //             content: 'Test new article content...'
+        //         })
+        //         .expect(400, {
+        //             error: { message: `Missing 'style' in request body` }
+        //         });
+        // });
+
+        const requiredFields = ['title', 'style', 'content'];
+
+        requiredFields.forEach(field => {
+            const newArticle = {
+                title: 'Test new article',
+                style: 'Listicles',
+                content: 'Test new article content...'
+            }
+
+            it(`responds with 400 and an error message when '${field}' is missing`, () => {
+                delete newArticle[field];
+                    // what's this do? ^
+                return supertest(app)
+                    .post('/articles')
+                    .send(newArticle)
+                    .expect(400, {
+                        error: { message: `Missing '${field}' in request body` }
+                    });
+            });
         });
     });
 

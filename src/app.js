@@ -4,11 +4,12 @@ const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
 const { NODE_ENV } = require('./config');
-const ArticlesService = require('./articles-service');
+// const ArticlesService = require('./articles/articles-service');
+const articlesRouter = require('./articles/articles-router');
 
 const app = express();
-const jsonParser = express.json();
-// to read body with JSON parser instead of insert to db table
+// const jsonParser = express.json();
+    // to read body with JSON parser instead of insert to db table
 
 // const morganOption = (process.env.NODE_ENV === 'production')
 const morganOption = (NODE_ENV === 'production')
@@ -19,10 +20,9 @@ app.use(morgan(morganOption));
 app.use(cors());
 app.use(helmet());
 
-app.get('/', (req, res) => {
-    res.send('Hello, world!');
-});
+app.use('/articles', articlesRouter);
 
+/* --- importing articlesRouter, so not needing below --- 
 app.get('/articles', (req, res, next) => {
     // res.send('All Articles');
     const knexInstance = req.app.get('db');
@@ -37,6 +37,27 @@ app.get('/articles', (req, res, next) => {
             })));
         })
         .catch(next);  // any errors get handled by error handler middleware
+});
+
+app.post('/articles', jsonParser, (req, res, next) => {
+    // res.status(201).json({
+    //     ...req.body,
+    //     id: 12,
+    // });
+        // creating article here:
+    const { title, content, style } = req.body
+    const newArticle = { title, content, style }
+    ArticlesService.insertArticle(
+        req.app.get('db'),
+        newArticle
+    )
+    .then(article => {
+        res
+            .status(201)
+            .location(`/articles/${article.id}`)  // make location header assertion pass, we need this method ^
+            .json(article)
+    })
+    .catch(next);
 });
 
 app.get('/articles/:article_id', (req, res, next) => {
@@ -65,27 +86,12 @@ app.get('/articles/:article_id', (req, res, next) => {
         })
         .catch(next);
 });
+---------------- */
 
-app.post('/articles', jsonParser, (req, res, next) => {
-    // res.status(201).json({
-    //     ...req.body,
-    //     id: 12,
-    // });
-        // creating article here:
-    const { title, content, style } = req.body
-    const newArticle = { title, content, style }
-    ArticlesService.insertArticle(
-        req.app.get('db'),
-        newArticle
-    )
-    .then(article => {
-        res
-            .status(201)
-            .location(`/articles/${article.id}`)  // make location header assertion pass, we need this method ^
-            .json(article)
-    })
-    .catch(next);
+app.get('/', (req, res) => {
+    res.send('Hello, world!');
 });
+
 
 app.use(function errorHandler(error, req, res, next) {
     let response;
