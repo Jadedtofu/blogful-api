@@ -1,3 +1,4 @@
+const path = require('path')
 const express = require('express');
 const xss = require('xss');
 const ArticlesService = require('./articles-service');
@@ -55,7 +56,9 @@ articlesRouter
         .then(article => {
             res
                 .status(201)
-                .location(`/articles/${article.id}`)
+                // .location(`/articles/${article.id}`)
+                // .location(req.originalUrl + `/${article.id}`)
+                .location(path.posix.join(req.originalUrl, `/${article.id}`)) //posix for 
                 .json(serializeArticle(article));
         })
         .catch(next);
@@ -110,6 +113,30 @@ articlesRouter
                 res.status(204).end();
             })
             .catch(next);
+    })
+    // .patch((req, res) => {
+    .patch(jsonParser, (req, res, next) => {
+        const { title, content, style } = req.body;
+        const articleToUpdate = { title, content, style };
+
+        const numberOfValues = Object.values(articleToUpdate).filter(Boolean).length;
+        if(numberOfValues === 0) {
+            return res.status(400).json({
+                error: {
+                    message: `Request body must contain 'title', 'style', or 'content'`
+                }
+            });
+        }
+        // res.status(204).end();
+        ArticlesService.updateArticle(
+            req.app.get('db'),
+            req.params.article_id,
+            articleToUpdate
+        )
+        .then(() => {
+            res.status(204).end()
+        })
+        .catch(next);
     });
 
 module.exports = articlesRouter
