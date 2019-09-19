@@ -366,7 +366,7 @@ describe('Articles Endpoints', function() {
                     });
             });
 
-            it(`responds with 204 when updateing only a subset of fields`, () => {
+            it(`responds with 204 when updating only a subset of fields`, () => {
                 const idToUpdate = 2;
                 const updateArticle = {
                     title: 'updated article title',
