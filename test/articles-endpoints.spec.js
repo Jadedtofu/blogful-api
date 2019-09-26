@@ -13,7 +13,7 @@ describe('Articles Endpoints', function() {
             client: 'pg',
             connection: process.env.TEST_DB_URL,
         });
-        app.set('db', db)  
+        app.set('db', db);
         // we skipped ./src/server.js and need app.set('db', knexInstance) here to run tests
     });
 
@@ -28,7 +28,7 @@ describe('Articles Endpoints', function() {
     // we can make context to describe app in a state where the database
     // has articles. We'll use beforEach to insert testArticles:
 
-    describe.only(`GET /api/articles`, () => {
+    describe(`GET /api/articles`, () => {
         context(`Given no articles`, () => {
             it(`responds with 200 and an empty list`, () => {
                 return supertest(app)
@@ -38,19 +38,25 @@ describe('Articles Endpoints', function() {
         });
 
         context(`Given there are articles in the database`, () => {
+            const testUsers = makeUsersArray();
             const testArticles = makeArticlesArray();
     
             beforeEach(`insert articles`, () => {
                 return db
                     .into('blogful_articles')
-                    .insert(testArticles.map(testArticle => ({  // to make sure the time issue passes in Windows:
-                        id: testArticle.id,
-                        title: testArticle.title,
-                        style: testArticle.style,
-                        content: testArticle.content,
-                        date_published: new Date(testArticle.date_published)
-                    })));
-                    // insert this array of objects into the table
+                    .insert(testUsers)
+                    .then(() => {
+                        return db
+                            .into('blogful_articles')
+                            .insert(testArticles.map(testArticle => ({  // to make sure the time issue passes in Windows:
+                                id: testArticle.id,
+                                title: testArticle.title,
+                                style: testArticle.style,
+                                content: testArticle.content,
+                                date_published: new Date(testArticle.date_published)
+                            })));
+                           // insert this array of objects into the table
+                    });
             });
     
             it(`responds with 200 and all of the articles`, () => {
@@ -64,12 +70,18 @@ describe('Articles Endpoints', function() {
         });
 
         context(`Given an XSS attack article`, () => {
+            const testUsers = makeUsersArray();
             const { badArticle, expectedArticle } = makeBadArticle();
 
             beforeEach('insert bad article', () => {
                 return db
                     .into('blogful_articles')
-                    .insert([badArticle])
+                    .insert(testUsers)
+                    .then(() => {
+                        return db
+                            .into('blogful_articles')
+                            .insert([ maliciousArticle ])
+                });
             });
 
             it('removes XSS attack content', () => {
@@ -84,7 +96,7 @@ describe('Articles Endpoints', function() {
         });
     });
 
-    describe.only(`GET /api/articles/:article_id`, () => {
+    describe(`GET /api/articles/:article_id`, () => {
         context(`Given there are no articles`, () => {
             it(`responds with 404`, () => {
                 const articleId = 12345
@@ -98,19 +110,25 @@ describe('Articles Endpoints', function() {
         });
 
         context('Given there are articles in the database', () => {
+            const testUsers = makeUsersArray();
             const testArticles = makeArticlesArray();
     
             beforeEach(`insert articles`, () => {
                 return db
                     .into('blogful_articles')
-                    .insert(testArticles.map(testArticle => ({
-                        id: testArticle.id,
-                        title: testArticle.title,
-                        style: testArticle.style,
-                        content: testArticle.content,
-                        date_published: new Date(testArticle.date_published)
-                    })));
-                    // insert this array of objects into the table
+                    .insert(testUsers)
+                    .then(() => {
+                        return db
+                            .into('blogful_articles')
+                            .insert(testArticles.map(testArticle => ({
+                                id: testArticle.id,
+                                title: testArticle.title,
+                                style: testArticle.style,
+                                content: testArticle.content,
+                                date_published: new Date(testArticle.date_published)
+                            })));
+                           // insert this array of objects into the table
+                    })
             });
     
             it(`responds with 200 and the specified article`, () => {
@@ -150,12 +168,18 @@ describe('Articles Endpoints', function() {
         // });
 
         context(`Given an XSS attack article`, () => {
+            const testUsers = makeUsersArray();
             const { badArticle, expectedArticle } = makeBadArticle();
 
             beforeEach('insert bad article', () => {
                 return db
                     .into('blogful_articles')
-                    .insert([ badArticle ])
+                    .insert(testUsers)
+                    .then(() => {
+                        return db
+                            .into('blogful_articles')
+                            .insert([ badArticle ]);
+                    });
             });
 
             it('removes XSS attack content', () => {
@@ -170,8 +194,15 @@ describe('Articles Endpoints', function() {
         });
     });
 
-    describe.only(`POST /api/articles`, () => {
-        it(`creates an article, responds with 201 and the new article`, function() {
+    describe(`POST /api/articles`, () => {
+        const testUsers = makeUsersArray();
+        beforeEach('insert users', () => {
+            return db
+                .into('blogful_users')
+                .insert(testUsers);
+        });
+
+        it(`creates an article, responds with 201 and the new article`, () => {
             this.retries(3)  // test 3 times to count as failure if all 3 fails
             const newArticle = {
                 title: 'Test new article',
@@ -192,10 +223,11 @@ describe('Articles Endpoints', function() {
                     const actual = new Date(res.body.date_published).toLocaleString()
                     expect(actual).to.eql(expected) // generating current date-time
                 })
-                .then(postRes =>  // so mocha knows to wait for both requests to resolve
+                .then(res =>  // so mocha knows to wait for both requests to resolve
                     supertest(app)
-                        .get(`/api/articles/${postRes.body.id}`)
-                        .expect(postRes.body));
+                        .get(`/api/articles/${res.body.id}`)
+                        .expect(res.body)
+                );
         });
 
         // it(`responds with 400 and an error message when 'title' is missing`, () => {
@@ -257,7 +289,6 @@ describe('Articles Endpoints', function() {
 
         it(`removes XSS attack content from response`, () => {
             const { badArticle, expectedArticle } = makeBadArticle();
-
             return supertest(app)
                 .post(`/api/articles`)
                 .send(badArticle)
@@ -269,7 +300,7 @@ describe('Articles Endpoints', function() {
         });
     });
 
-    describe.only(`DELETE /api/articles/:article_id`, () => {
+    describe(`DELETE /api/articles/:article_id`, () => {
         context(`Given no articles`, () => {
             it(`responds with 404`, () => {
                 const articleId = 123456
@@ -282,19 +313,26 @@ describe('Articles Endpoints', function() {
         });
 
         context(`Given there are articles in the database`, () => {
+            const testUsers = makeUsersArray();
             const testArticles = makeArticlesArray();
 
             beforeEach('insert articles', () => {
                 return db
                     .into('blogful_articles')
-                    .insert(testArticles.map(testArticle => ({
-                        id: testArticle.id,
-                        title: testArticle.title,
-                        style: testArticle.style,
-                        content: testArticle.content,
-                        date_published: new Date(testArticle.date_published)
-                    })));
-            });  // need this ^ for the time to pass
+                    .insert(testUsers)
+                    .then(() => {
+                        return db
+                            .into('blogful_articles')
+                            .insert(testArticles.map(testArticle => ({
+                                id: testArticle.id,
+                                title: testArticle.title,
+                                style: testArticle.style,
+                                content: testArticle.content,
+                                date_published: new Date(testArticle.date_published)
+                                // need this ^ for the time to pass
+                            })));
+                    });
+            });  
 
             it('responds with 204 and removes the article', () => {
                 const idToRemove = 2;
@@ -311,29 +349,35 @@ describe('Articles Endpoints', function() {
         })
     });
 
-    describe.only(`PATCH /api/articles/:article_id`, () => {
+    describe(`PATCH /api/articles/:article_id`, () => {
         context(`Given no articles`, () => {
             it(`responds with 404`, () => {
                 const articleId = 123456;
                 return supertest(app)
-                    .patch(`/api/articles/${articleId}`)
+                    .patch(`/api/articles/${articleId}`) // reading has .delete(`/api/articles ...)
                     .expect(404, { error: { message: `Article doesn't exist`}})
             });
         });
 
         context(`Given there are articles in the db`, () => {
+            const testUsers = makeUsersArray();
             const testArticles = makeArticlesArray();
 
             beforeEach(`insert articles`, () => {
                 return db
                     .into('blogful_articles')
-                    .insert(testArticles.map(testArticle => ({
-                        id: testArticle.id,
-                        title: testArticle.title,
-                        style: testArticle.style,
-                        content: testArticle.content,
-                        date_published: new Date(testArticle.date_published)
-                    })));
+                    .insert(testUsers)
+                    .then(() => {
+                        return db
+                            .into('blogful_articles')
+                            .insert(testArticles.map(testArticle => ({
+                                id: testArticle.id,
+                                title: testArticle.title,
+                                style: testArticle.style,
+                                content: testArticle.content,
+                                date_published: new Date(testArticle.date_published)
+                            })));
+                    });
             });
 
             it('responds with 204 and updates the article', () => {
@@ -354,7 +398,8 @@ describe('Articles Endpoints', function() {
                     .then(() => 
                         supertest(app)
                             .get(`/api/articles/${idToUpdate}`)
-                            .expect(expectedArticle));
+                            .expect(expectedArticle)
+                    );
             });
 
             it(`responds with 400 when no req'd fields are supplied`, () => {
