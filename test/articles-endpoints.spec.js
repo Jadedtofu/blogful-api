@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const knex = require('knex');
 const app = require('../src/app');
 const { makeArticlesArray, makeBadArticle } = require('./articles.fixtures');
+const { makeUsersArray } = require('./users.fixtures');
 
 describe('Articles Endpoints', function() {
     let db;
@@ -18,9 +19,11 @@ describe('Articles Endpoints', function() {
 
     after('disconnect from db', () => db.destroy());
 
-    before('clean the table', () => db('blogful_articles').truncate());
+    // before('clean the table', () => db('blogful_articles').truncate());
+    before('clean the table', () => db.raw('TRUNCATE blogful_articles, blogful_users, blogful_comments RESTART IDENTITY CASCADE'));
 
-    afterEach('cleanup', () => db('blogful_articles').truncate());
+    // afterEach('cleanup', () => db('blogful_articles').truncate());
+    afterEach('cleanup',() => db.raw('TRUNCATE blogful_articles, blogful_users, blogful_comments RESTART IDENTITY CASCADE'));
 
     // we can make context to describe app in a state where the database
     // has articles. We'll use beforEach to insert testArticles:

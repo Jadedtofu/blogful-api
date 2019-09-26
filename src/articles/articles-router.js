@@ -11,7 +11,8 @@ const serializeArticle = article => ({
     style: article.style,
     title: xss(article.title),
     content: xss(article.content),
-    date_published: new Date(article.date_published)
+    date_published: new Date(article.date_published),
+    author: article.author,  // update code to include author when new article is created (author id)
 });
 
 articlesRouter
@@ -26,8 +27,8 @@ articlesRouter
             .catch(next);
     })
     .post(jsonParser, (req, res, next) => {
-        const { title, content, style } = req.body
-        const newArticle = { title, content, style }
+        const { title, content, style, author } = req.body; // adding author to req body
+        const newArticle = { title, content, style };
 
         // if (!title) {
         //     return res.status(400).json({
@@ -41,14 +42,15 @@ articlesRouter
         //     });
         // }
 
-        for (const [key, value] of Object.entries(newArticle)) {
+        for (const [key, value] of Object.entries(newArticle)) {  
+                // skipping validation of author, not req'd
             if (value == null) {
                 return res.status(400).json({
                     error: { message: `Missing '${key}' in request body`}
                 });
             }
         }
-
+        newArticle.author = author;  // adding author to the object
         ArticlesService.insertArticle(
             req.app.get('db'),
             newArticle
