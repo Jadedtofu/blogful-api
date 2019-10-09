@@ -1,12 +1,12 @@
 const knex = require('knex');
 const app = require('./app');
-const { PORT, DB_URL } = require('./config');
+const { PORT, DATABASE_URL } = require('./config');
 // const { PORT } = require('./config');
 // const PORT = process.env.PORT || 8000;
 
 const db = knex({
     client: 'pg',
-    connection: DB_URL,
+    connection: DATABASE_URL,
 });
 
 // Express feature to do this so we don't get a dependency cycle

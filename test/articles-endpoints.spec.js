@@ -11,7 +11,7 @@ describe('Articles Endpoints', function() {
     before('make knex instance', () => {
         db = knex({
             client: 'pg',
-            connection: process.env.TEST_DB_URL,
+            connection: process.env.TEST_DATABASE_URL,
         });
         app.set('db', db);
         // we skipped ./src/server.js and need app.set('db', knexInstance) here to run tests
@@ -80,7 +80,7 @@ describe('Articles Endpoints', function() {
                     .then(() => {
                         return db
                             .into('blogful_articles')
-                            .insert([ maliciousArticle ])
+                            .insert([ badArticle ])
                 });
             });
 
