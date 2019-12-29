@@ -43,7 +43,7 @@ describe('Articles Endpoints', function() {
     
             beforeEach(`insert articles`, () => {
                 return db
-                    .into('blogful_articles')
+                    .into('blogful_users')
                     .insert(testUsers)
                     .then(() => {
                         return db
@@ -75,7 +75,7 @@ describe('Articles Endpoints', function() {
 
             beforeEach('insert bad article', () => {
                 return db
-                    .into('blogful_articles')
+                    .into('blogful_users')
                     .insert(testUsers)
                     .then(() => {
                         return db
@@ -115,7 +115,7 @@ describe('Articles Endpoints', function() {
     
             beforeEach(`insert articles`, () => {
                 return db
-                    .into('blogful_articles')
+                    .into('blogful_users')
                     .insert(testUsers)
                     .then(() => {
                         return db
@@ -173,7 +173,7 @@ describe('Articles Endpoints', function() {
 
             beforeEach('insert bad article', () => {
                 return db
-                    .into('blogful_articles')
+                    .into('blogful_users')
                     .insert(testUsers)
                     .then(() => {
                         return db
@@ -318,7 +318,7 @@ describe('Articles Endpoints', function() {
 
             beforeEach('insert articles', () => {
                 return db
-                    .into('blogful_articles')
+                    .into('blogful_users')
                     .insert(testUsers)
                     .then(() => {
                         return db
@@ -365,7 +365,7 @@ describe('Articles Endpoints', function() {
 
             beforeEach(`insert articles`, () => {
                 return db
-                    .into('blogful_articles')
+                    .into('blogful_users')
                     .insert(testUsers)
                     .then(() => {
                         return db
